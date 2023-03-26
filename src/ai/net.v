@@ -95,7 +95,7 @@ pub fn (n Network) loss(y []f64) ![]f64 {
 pub fn (n Network) meanloss(y []f64) !f64 {
 	loss := n.loss(y)!
 
-	s := arrays.sum[f64](loss.data)!
+	s := arrays.sum[f64](loss)!
 	return s / loss.len
 }
 

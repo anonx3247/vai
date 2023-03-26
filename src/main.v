@@ -3,7 +3,6 @@ module main
 import ai
 
 fn main() {
-	/*
 	mut net := ai.new_network(
 		name: 'Skynet'
 		input_size: 64
@@ -26,6 +25,4 @@ fn main() {
 	println('res: ${res}')
 	println('loss: ${loss}')
 	println('meanloss ${net.meanloss(y)!}')
-	*/
-	println('Hello, world!')
 }

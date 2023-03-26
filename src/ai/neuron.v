@@ -4,7 +4,8 @@ struct Neuron {
 mut:
 	value  f64
 	inputs []Neuron
-__global:
+	//__global:
+pub mut:
 	input_weights []f64
 }
 

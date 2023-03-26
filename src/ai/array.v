@@ -3,7 +3,7 @@ module ai
 import rand
 
 fn layer_to_array(l Layer) []f64 {
-	return []f64{len: l.neurons.len, init: l.neurons[index]}
+	return []f64{len: l.neurons.len, init: l.neurons[index].value}
 }
 
 pub fn random_array(len int) []f64 {
