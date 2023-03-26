@@ -33,15 +33,12 @@ fn tanh(x f64) f64 {
 
 // Loss functions
 
-fn logloss(pred Tensor, real Tensor) Tensor {
+fn logloss(pred []f64, real []f64) []f64 {
 	assert pred.len == real.len, 'pred and real dimensions do not match ${pred.len} != ${real.len}'
-	x := pred.data
-	y := real.data
-	mut arr := []f64{len: pred.len, init: -(y[index] * math.log(x[index]) +
-		(1 - y[index]) * math.log(1 - x[index]))}
-	return array_to_tensor(arr)
+	return []f64{len: pred.len, init: -(real[index] * math.log(pred[index]) +
+		(1 - real[index]) * math.log(1 - pred[index]))}
 }
 
-fn square_mean(pred Tensor, real Tensor) Tensor {
-	return random_tensor(pred.len)
+fn square_mean(pred []f64, real []f64) []f64 {
+	return random_array(pred.len)
 }

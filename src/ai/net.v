@@ -5,23 +5,23 @@ import arrays
 
 [noinit]
 struct Network {
-	loss_fn fn (Tensor, Tensor) Tensor
+	loss_fn fn ([]f64, []f64) []f64
 mut:
-	name    string
+	name   string
 	layers []Layer
 }
 
 [params]
 pub struct NetworkDefinition {
 	name              string                  [required]
-	input_spec        Tensor                  [required]
-	output_spec       Tensor                  [required]
+	input_size        int                     [required]
+	output_size       int                     [required]
 	inner_layer_count int  = 1
 	input_fn          Func = sigmoid
 	output_fn         Func = sigmoid
 	inner_fn          Func = sigmoid
 	inner_size        int
-	loss_fn           fn (Tensor, Tensor) Tensor = logloss
+	loss_fn           fn ([]f64, []f64) []f64 = logloss
 }
 
 // Network Initialization
@@ -30,7 +30,7 @@ pub fn new_network(def NetworkDefinition) Network {
 	// form the layers
 	mut input_layer := Layer{
 		activation_fn: def.input_fn
-		neurons: []Neuron{len: def.input_spec.len}
+		neurons: []Neuron{len: def.input_size}
 	}
 
 	mut inner_layers := []Layer{len: def.inner_layer_count}
@@ -44,7 +44,7 @@ pub fn new_network(def NetworkDefinition) Network {
 
 	mut output_layer := Layer{
 		activation_fn: def.output_fn
-		neurons: []Neuron{len: def.output_spec.len}
+		neurons: []Neuron{len: def.output_size}
 	}
 
 	// join all layers
@@ -62,50 +62,52 @@ pub fn new_network(def NetworkDefinition) Network {
 	}
 }
 
-
 pub fn (mut n Network) rename(name string) {
 	n.name = name
 }
 
-pub fn (n Network) run(input Tensor) !Tensor {
+// runs an input through the network and outputs the value returned
+pub fn (n Network) run(input []f64) ![]f64 {
 	if input.len != n.layers[0].neurons.len {
 		return error('error, incorrect input length')
 	}
 	for i, mut neuron in n.layers[0].neurons {
-		neuron.value = input.data[i]
+		neuron.value = input[i]
 	}
 
 	for mut layer in n.layers[1..] {
 		layer.run()
 	}
 
-	return layer_to_tensor(n.layers[n.layers.len - 1])
+	return layer_to_array(n.layers[n.layers.len - 1])
 }
 
-pub fn (n Network) loss(y Tensor) !Tensor {
-	output := layer_to_tensor(n.layers[n.layers.len - 1])
+// returns the loss on the previous run, comparing to the y prediction
+pub fn (n Network) loss(y []f64) ![]f64 {
+	output := layer_to_array(n.layers[n.layers.len - 1])
 	if output.len != y.len {
 		return error('unmatching prediction and test lengths')
 	}
 	return n.loss_fn(output, y)
 }
 
-pub fn (n Network) meanloss(y Tensor) !f64 {
+// returns average loss on all coordinates of the output array
+pub fn (n Network) meanloss(y []f64) !f64 {
 	loss := n.loss(y)!
 
 	s := arrays.sum[f64](loss.data)!
-	return s/loss.len
+	return s / loss.len
 }
 
-
-/* returns a list of tables of weights where:
+/*
+returns a list of tables of weights where:
 
 	weights[i] is the table representing the weights connecting layer i-1 to layer i
 
 	and weights[i][j] is the list of weights of neurons in layer i-1 connected to neuron j in layer i
 */
 fn (n Network) weights() [][][]f64 {
-	mut w := [][][]f64{len: n.layers.len-1, init: [][]f64{}}
+	mut w := [][][]f64{len: n.layers.len - 1, init: [][]f64{}}
 
 	for i, layer in n.layers[1..] {
 		w[i] = [][]f64{len: layer.neurons.len}
@@ -119,6 +121,7 @@ fn (n Network) weights() [][][]f64 {
 	return w
 }
 
+// sets random values for all the weights of a network
 pub fn (mut n Network) randomize_weights() {
 	for mut layer in n.layers {
 		for mut neuron in layer.neurons {
@@ -129,6 +132,10 @@ pub fn (mut n Network) randomize_weights() {
 	}
 }
 
+/*
+there are some errors in the data storage process because of float imprecisions,
+	this gets a list of all changed values and returns the deltas which are usually around 1e-18 in size
+*/
 pub fn find_diff(n1 Network, n2 Network) []f64 {
 	assert n1.layers.len == n2.layers.len
 
