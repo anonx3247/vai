@@ -1,54 +1,6 @@
 module util
 
-pub fn (tbl [][]f64) str_tbl() [][]string {
-	mut str_tbl := [][]string{len: tbl.len, init: []string{len: tbl[index].len}}
-	for i in 0 .. tbl.len {
-		for j in 0 .. tbl[i].len {
-			str_tbl[i][j] = tbl[i][j].str()
-		}
-	}
-
-	return str_tbl
-}
-
-pub fn (tbl [][]string) f64_tbl() [][]f64 {
-	mut f64_tbl := [][]f64{len: tbl.len, init: []f64{len: tbl[index].len}}
-
-	for i in 0 .. tbl.len {
-		for j in 0 .. tbl[i].len {
-			f64_tbl[i][j] = tbl[i][j].f64()
-		}
-	}
-
-	return f64_tbl
-}
-
-// inverts table so [i,j] = [j,i]
-
-pub fn invert_tbl(tbl [][]f64) [][]f64 {
-	mut inverted := [][]f64{len: tbl[0].len, init: []f64{len: tbl.len}}
-
-	for i in 0 .. tbl[0].len {
-		for j in 0 .. tbl.len {
-			inverted[i][j] = tbl[j][i]
-		}
-	}
-
-	return inverted
-}
-
-pub fn (tbl [][]f64) is_empty() bool {
-	for i in 0 .. tbl.len {
-		for j in 0 .. tbl[i].len {
-			if tbl[i][j] != 0 {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-pub fn sort[T](list []T, indexer fn (T) !int) ![]T {
+pub fn sort_by_index[T](list []T, indexer fn (T) !int) ![]T {
 	mut new := []T{len: list.len}
 	for elem in list {
 		index := indexer(elem)!
@@ -56,4 +8,47 @@ pub fn sort[T](list []T, indexer fn (T) !int) ![]T {
 		new[index] = elem
 	}
 	return new
+}
+
+/*
+implement quicksort algorithm using the 'comparer' function as
+the with which to compare elements
+*/
+
+pub fn sort[T](list []T, comparer ?fn (x T, y T) bool) []T {
+	op := if comparer is none {
+		fn (x T, y T) bool {
+			if x < y {
+				return true
+			} else {
+				return false
+			}
+		}
+	} else {
+		comparer
+	}
+
+	if list.len <= 1 {
+		return list
+	}
+
+	pivot := list[0]
+
+	mut small := []T{}
+	mut big := []T{}
+
+	for elem in list {
+		if op(elem, pivot) {
+			small << elem
+		} else {
+			big << elem
+		}
+	}
+
+	mut res := []T{}
+
+	res << small.sort(op)
+	res << big.sort(op)
+
+	return res
 }

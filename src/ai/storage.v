@@ -7,6 +7,7 @@ import arrays
 import util
 import strconv
 import szip
+import readline
 
 struct NetworkParameters {
 	name           string
@@ -27,16 +28,24 @@ pub fn (n Network) save(location string) ! {
 
 	mut files := []string{}
 
+	mut loc := location
+
+	mkdir:
 	// folder to be compressed
-	os.mkdir(location)!
+	os.mkdir(loc) or {
+		mut r := readline.Readline{}
+		println('${location} already exists!')
+		println('please provide a new location:')
+		loc = r.read_line('location: ')!
+		loc = loc#[..-1]
+		goto mkdir
+	}
 
 	// store weights as multiple csv files
-	weights := n.weights()
-
-	for i in 0 .. weights.len {
+	for i in 0 .. n.weights.len {
 		os.create(dir + '/${i}.csv')!
 		mut writer := csv.new_writer(use_crlf: false)
-		for line in weights[i].str_tbl() {
+		for line in n.weights[i].str_tbl() {
 			writer.write(line)!
 		}
 		os.write_file(dir + '/${i}.csv', writer.str())!
@@ -49,16 +58,15 @@ pub fn (n Network) save(location string) ! {
 	os.write_file(dir + '/params.json', s)!
 	files << dir + '/params.json'
 
-	szip.zip_files(files, location + '/${n.name}.net')!
+	szip.zip_files(files, loc + '/${n.name}.net')!
 }
 
 // Utility function returning name, loss_fn, and the activation fns of a network
 fn (n Network) params() NetworkParameters {
-	activ := []string{len: n.layers.len, init: n.layers[index].activation_fn.str()}
-	loss := if n.loss_fn == logloss { 'logloss' } else { 'square_mean' }
+	activ := []string{len: n.layers.len, init: n.activation_fns[index].str()}
 	return NetworkParameters{
 		name: n.name
-		loss_fn: loss
+		loss_fn: n.loss_fn.str()
 		activation_fns: activ
 	}
 }
@@ -85,7 +93,6 @@ pub fn net_from_file(filename string) !Network {
 			return false
 		}
 	})
-	println(paths)
 
 	params_index := arrays.binary_search(paths, 'params.json') or {
 		return error('params file not found')
@@ -97,7 +104,7 @@ pub fn net_from_file(filename string) !Network {
 	// remove params from the index
 	paths.delete(params_index)
 	// sort ascendingly the csvs
-	paths = util.sort[string](paths, fn (elem string) !int {
+	paths = util.sort_by_index[string](paths, fn (elem string) !int {
 		assert elem.len >= 4
 		return strconv.atoi(elem[..elem.len - 4])!
 		/*
@@ -118,12 +125,13 @@ pub fn net_from_file(filename string) !Network {
 		return strconv.atoi(elem[it..elem.len - 4])!
 		*/
 	})!
+	println(paths)
 
 	for mut p in paths {
 		p = path + '/' + p
 	}
 
-	weights := [][][]f64{len: paths.len, init: weights_from_csv(paths[index])!}
+	weights := []Matrix{len: paths.len, init: weights_from_csv(paths[index])!}
 
 	parameters := json.decode(NetworkParameters, params) or {
 		return error('unable to decode parameters, ${err}')
@@ -135,24 +143,33 @@ pub fn net_from_file(filename string) !Network {
 		return error('missing layers, expected ${parameters.activation_fns.len}, got ${paths.len + 1}\npaths=${paths}')
 	}
 
-	mut layers := []Layer{len: paths.len, init: new_layer(parameters.activation_fns[index + 1],
-		weights[index])!}
+	mut layers := []Vec{len: paths.len, init: new_vec(weights[index].len)}
 
-	layers.prepend(new_layer(parameters.activation_fns[0], [][]f64{len: layers[0].neurons[0].input_weights.len}) or {
-		return error('unable to create first layer')
-	})
+	layers.prepend(new_vec(weights[0][0].len))
 
-	layers.connect()
+	mut fns := []ActivationFn{len: parameters.activation_fns.len, init: match parameters.activation_fns[index] {
+		'sigmoid' { sigmoid }
+		'relu' { relu }
+		'tanh' { tanh }
+		else { sigmoid }
+	}}
 
 	return Network{
 		name: parameters.name
-		loss_fn: if parameters.loss_fn == 'logloss' { logloss } else { square_mean }
+		weights: weights
+		loss_fn: if parameters.loss_fn == 'logloss' {
+			logloss
+		} else {
+			logloss
+			// square_mean
+		}
 		layers: layers
+		activation_fns: fns
 	}
 }
 
 // Utility fn, returns weights table from a csv
-fn weights_from_csv(path string) ![][]f64 {
+fn weights_from_csv(path string) !Matrix {
 	text := os.read_file(path) or { return error('unable to read file ${path}') }
 
 	mut raw := [][]string{}

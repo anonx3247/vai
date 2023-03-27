@@ -11,18 +11,13 @@ fn main() {
 	)
 
 	net.randomize_weights()
+	net.save('skynet')!
 
-	t := ai.random_array(64)
+	// t := ai.random_vec(64)
 
-	println('input: ${t}')
+	mut net2 := ai.net_from_file('skynet/Skynet.net')!
 
-	res := net.run(t)!
+	net2.rename('skynet2')
 
-	y := ai.random_array(10)
-
-	loss := net.loss(y)!
-
-	println('res: ${res}')
-	println('loss: ${loss}')
-	println('meanloss ${net.meanloss(y)!}')
+	println(ai.diff(net, net2))
 }
