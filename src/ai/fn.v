@@ -78,7 +78,7 @@ fn (l LossFn) call(x Vec, y Vec) Vec {
 	return l.self(x, y)
 }
 
-const (
+pub const (
 	sigmoid = ActivationFn{
 		self: def_sigmoid
 		deriv: def_sigmoidp

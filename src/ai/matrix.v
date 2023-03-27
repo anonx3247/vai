@@ -45,9 +45,7 @@ pub fn (a Matrix) * (b Matrix) Matrix {
 	p := a[0].len
 	q := b[0].len
 
-	assert p == b.len, 'cannot multiply ${n}x${p} matrix with ${b.len}x${q} matrix'
-
-	println('multiplying ${n}x${p} matrix by ${p}x${q}')
+	assert p == b.len, 'cannot multiply ${a.dim()} matrix with ${b.dim()} matrix'
 
 	mut c := new_matrix(n, q)
 

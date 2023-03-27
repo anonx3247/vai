@@ -30,16 +30,20 @@ pub fn (n Network) save(location string) ! {
 
 	mut loc := location
 
-	mkdir:
-	// folder to be compressed
-	os.mkdir(loc) or {
-		mut r := readline.Readline{}
-		println('${location} already exists!')
-		println('please provide a new location:')
-		loc = r.read_line('location: ')!
-		loc = loc#[..-1]
-		goto mkdir
+	// unsafe due to goto
+	unsafe {
+		mkdir:
+		// folder to be compressed
+		os.mkdir(loc) or {
+			mut r := readline.Readline{}
+			println('${location} already exists!')
+			println('please provide a new location:')
+			loc = r.read_line('location: ')!
+			loc = loc#[..-1]
+			goto mkdir
+		}
 	}
+
 
 	// store weights as multiple csv files
 	for i in 0 .. n.weights.len {

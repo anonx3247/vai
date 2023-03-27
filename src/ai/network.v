@@ -94,7 +94,6 @@ pub fn (n Network) run(input Vec) !Vec {
 	}
 
 	for i, mut layer in n.layers[1..] {
-		println('weight ${i} dim = ${n.weights[i].dim()}')
 		layer = n.activation_fns[i].call((n.weights[i] * n.layers[i].mat()).vec())
 	}
 
@@ -135,7 +134,7 @@ pub fn diff(n1 Network, n2 Network) Vec {
 
 	mut diffs := []f64{}
 
-	for i, layer in n1.layers[1..] {
+	for i, _ in n1.layers[1..] {
 		println('dimensions: ${n1.weights[i].dim()}, ${n2.weights[i].dim()}')
 		n, _ := n1.weights[i].dim()
 		for j in 0 .. n {
