@@ -9,8 +9,9 @@ struct ActivationFn {
 }
 
 struct LossFn {
-	self fn (x Vec, y Vec) Vec
-	rep  string
+	self  fn (x Vec, y Vec) Vec
+	deriv fn (x Vec, y Vec) Vec
+	rep   string
 }
 
 fn def_relu(x Vec) Vec {
@@ -70,12 +71,22 @@ fn def_logloss(pred Vec, real Vec) Vec {
 		(1 - real[index]) * math.log(1 - pred[index]))}
 }
 
+// TODO: find the derivative of this function (or it's gradient)
+fn def_loglossp(pred Vec, real Vec) Vec {
+	return []f64{len: pred.len, init: -(real[index] * math.log(pred[index]) +
+		(1 - real[index]) * math.log(1 - pred[index]))}
+}
+
 fn (l LossFn) str() string {
 	return l.rep
 }
 
 fn (l LossFn) call(x Vec, y Vec) Vec {
 	return l.self(x, y)
+}
+
+fn (l LossFn) dcall(x Vec, y Vec) Vec {
+	return l.deriv(x, y)
 }
 
 pub const (

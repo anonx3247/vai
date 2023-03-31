@@ -4,6 +4,11 @@ import rand
 
 type Vec = []f64
 
+struct Dataset {
+	inputs  []Vec
+	outputs []Vec
+}
+
 pub fn random_vec(len int) Vec {
 	mut arr := []f64{len: len}
 	for mut e in arr {

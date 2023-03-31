@@ -22,7 +22,7 @@ Stores neural network as a zipped file in the directory `location`
 	- a csv holding the values of the weights for each inter-layer
 	- a `params.json` file with other parameters such as activation functions and the network name
 */
-pub fn (n Network) save(location string) ! {
+pub fn (n Network) save(location string, overwrite bool) ! {
 	// open a new temporary directory
 	dir := os.vtmp_dir()
 
@@ -35,6 +35,10 @@ pub fn (n Network) save(location string) ! {
 		mkdir:
 		// folder to be compressed
 		os.mkdir(loc) or {
+
+			if overwrite {
+				os.rmdir_all(location)!
+			}
 			mut r := readline.Readline{}
 			println('${location} already exists!')
 			println('please provide a new location:')
