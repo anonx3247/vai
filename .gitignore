@@ -1,0 +1,5 @@
+# files to exclude (here the datasets)
+mnist_test.csv
+mnist_test_abridged.csv
+mnist_train.csv
+mnist_train_abridged.csv
